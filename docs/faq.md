@@ -5,17 +5,20 @@ the authoritative, always-current version of "what's actually done").
 
 ## Is this production-ready?
 
-No, not yet, and the repo doesn't claim otherwise. Every SQL/Bicep/
-Terraform/ADF/Databricks/Fabric/Synapse artifact is written and validated
-to the ceiling this project's environment allows — offline compilers
-(`az bicep build`, `terraform validate`), JSON/Python syntax checks, and
-one live SQL Server 2022 container run covering database/schema/dimension
-creation. **None of it has been deployed against a real Azure
-subscription, Databricks workspace, Fabric tenant, or Synapse workspace
-yet.** Treat this as a well-reasoned, internally consistent starting
-point to adapt, not a drop-in production system. `CHANGELOG.md`'s
-"Verified" vs "Added" sections are the precise record of what's actually
-been run versus just written.
+No, not yet, and the repo doesn't claim otherwise. The SQL layer is
+verified further than the rest: every script in `src/sql/` and all three
+accelerators (banking, healthcare, retail) has actually run against a
+real, live SQL Server 2022 container — including loading real generated
+data through staging into the dimension/fact tables, with exact row
+counts and zero orphaned foreign keys. Bicep/Terraform/ADF/Databricks/
+Fabric/Synapse are validated to the ceiling offline tooling allows
+(`az bicep build`, `terraform validate`, JSON/Python syntax checks) but
+**none of it has been deployed against a real Azure subscription,
+Databricks workspace, Fabric tenant, or Synapse workspace yet.** Treat
+this as a well-reasoned, increasingly-verified starting point to adapt,
+not a drop-in production system. `CHANGELOG.md`'s "Verified" vs "Added"
+sections are the precise record of what's actually been run versus just
+written.
 
 ## Do I need an Azure subscription to try this?
 

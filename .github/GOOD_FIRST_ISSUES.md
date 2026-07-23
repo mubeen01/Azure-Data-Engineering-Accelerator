@@ -105,18 +105,19 @@ a real SQL SKU instead of `Basic`) would round this out — see
 `ROADMAP.md`'s Phase 6 section, "Environments" in
 `architecture/deployment-architecture.md`.
 
-## Verify the SQL framework's facts, procedures, and all three accelerators against a live SQL Server
+## Watch `validate-sql` actually run on GitHub's infrastructure
 
-**Difficulty:** Medium · **Area:** `src/sql/`, `examples/*/sql/`
+**Difficulty:** Small · **Area:** `.github/workflows/ci.yml`
 
-Database creation, schema creation, and all 7 core dimensions were
-verified against a real SQL Server 2022 Docker container (see
-`CHANGELOG.md`'s `[Unreleased]` → `Verified` section) before that test run
-was intentionally stopped partway through. Facts, stored procedures, and
-all three accelerators' extensions (banking, healthcare, retail) are
-reviewed but not yet run the same way — `.github/workflows/ci.yml`'s
-`validate-sql` job runs all of it on every push now, but hasn't been
-*observed* running on GitHub's infrastructure yet either (see the CI
-item elsewhere in `ROADMAP.md`). `docs/getting-started.md`'s Path 2 has
-the exact Docker command to pick
-this back up.
+Every script in `src/sql/` and all three accelerators (`examples/*/sql/`)
+now runs clean against a live SQL Server 2022 container — verified
+locally, including a full staging → dim/fact ETL pass with real generated
+data (see `CHANGELOG.md`'s `[Unreleased]` → `Verified` section). What
+hasn't been observed is `validate-sql` actually running on GitHub's own
+runners — if the service container doesn't come up as cleanly there as
+it did locally, or `mssql-tools18`'s `sqlcmd` behaves differently from
+what was tested, that's the thing to debug. (One real gotcha already
+found locally, documented in `docs/troubleshooting.md`: an older,
+ODBC-17-based `sqlcmd` defaults `QUOTED_IDENTIFIER OFF`, which fails
+every filtered index — not a script bug, and not expected to reproduce
+with `mssql-tools18`, but worth confirming.)

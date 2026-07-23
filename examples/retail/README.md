@@ -64,7 +64,7 @@ no relative ordering needed against order). See `adf/README.md`.
 
 ## Databricks
 
-`databricks/databricks.yml` wires a 10-task job: Bronze (4 entities) →
+`databricks/databricks.yml` wires a 12-task job: Bronze (4 entities) →
 Silver (4 entities) → Gold dimensions (`dim_customer`, `dim_product` — via
 the generic SCD Type 2 notebook, writing into the same Gold tables
 banking's and healthcare's bundles would) → Gold facts
@@ -78,10 +78,16 @@ generic notebook to begin with).
 - **Data generation**: ran for real, verified (2,000/160/320/8,000 rows,
   correct headers, referentially consistent — see
   `tools/synthetic-data-generator/README.md`).
-- **SQL**: written and reviewed against the same patterns
-  `examples/banking/sql/` and `examples/healthcare/sql/` already
-  established; not executed against a live SQL Server/Azure SQL instance
-  in this environment — same caveat as the rest of `src/sql/`.
+- **SQL**: verified end-to-end against a real, live SQL Server 2022
+  container — every script in this folder ran with zero errors, the real
+  generated CSVs were loaded into staging, and every load procedure ran
+  in dependency order. Row counts matched the generator's output exactly
+  (2,000 customers / 160 products / 320 inventory rows / 8,000 orders)
+  with zero orphaned foreign keys on `fact.fact_orders`. This also
+  confirms retail's customers/products genuinely coexist with banking's
+  in the same shared `dim.dim_customer`/`dim.dim_product` tables — the
+  "reused generic table" claim above is proven, not just asserted. See
+  `CHANGELOG.md`'s `[Unreleased]` → Verified section.
 - **ADF**: no new pipeline JSON to validate (metadata-driven — see
   `adf/README.md`).
 - **Databricks bundle**: YAML structurally reviewed (10 tasks, dependency

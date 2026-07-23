@@ -8,6 +8,8 @@ The format follows the principles of Keep a Changelog and Semantic Versioning.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-07-23
+
 ### Added
 
 - Healthcare and Retail industry accelerators (`examples/healthcare/`,
@@ -171,6 +173,27 @@ The format follows the principles of Keep a Changelog and Semantic Versioning.
   Stopped there at the user's request before covering facts, stored
   procedures, or the banking extensions — those remain reviewed-but-not-executed,
   same as before. Test container and cached image removed afterward.
+- **Superseding the above**: every script in `src/sql/` and all three
+  accelerators (`examples/{banking,healthcare,retail}/sql/`) — 55 files
+  total — ran with zero errors against a fresh SQL Server 2022 Docker
+  container, matching CI's `validate-sql` job exactly. Root-caused and
+  fixed a false failure on every filtered `is_current` index (`dim_customer`,
+  `dim_product`, `dim_employee`, `dim_account`, `dim_loan`, `dim_patient`,
+  `dim_provider`) that turned out to be a local `sqlcmd` client defaulting
+  `QUOTED_IDENTIFIER OFF` (older ODBC 17-based `sqlcmd`, not the
+  `mssql-tools18` CI actually uses) — not a bug in any script; resolved
+  with `-I`, then reran clean.
+  Went further than DDL: loaded the real generated CSVs
+  (`datasets/{banking,healthcare,retail}/*.csv`, 2,000-row scale) into
+  every staging table and ran every load procedure for all three
+  accelerators end-to-end. Every row landed with an exact count match
+  (banking 2,000/2,800/600/24,000; healthcare 2,000/100/6,000/4,000;
+  retail 2,000/160/8,000/320) and **zero orphaned foreign keys** on any
+  fact table. Also confirms retail's customers/products genuinely coexist
+  with banking's in the same shared `dim.dim_customer`/`dim.dim_product`
+  tables, distinguished by `source_system` — the "generic table reuse"
+  claim in `examples/retail/README.md` is now proven, not just asserted.
+  Verification container and scratch script removed afterward.
 
 ### Fixed
 
@@ -190,19 +213,27 @@ The format follows the principles of Keep a Changelog and Semantic Versioning.
 
 ### In Progress
 
-- Healthcare, retail, and insurance generators and accelerators (Phase 3
-  Milestone 3.2 / Phase 8) — blocked on the generators not existing yet.
-- Databricks notebooks (generic and banking-specific) are written and
-  reviewed but not yet run against a real Spark/Databricks cluster;
+- Insurance generator and accelerator (Phase 3 Milestone 3.2 / Phase 8) —
+  the one remaining industry, blocked on its generator not existing yet
+  (no dataset shape defined anywhere, unlike banking/healthcare/retail,
+  which each had at least an empty placeholder CSV to design against).
+- Databricks notebooks (generic and all three accelerators') are written
+  and reviewed but not yet run against a real Spark/Databricks cluster;
   `databricks bundle validate` needs a reachable workspace to fully pass.
-- None of the IaC (Phase 6 or Phase 7) or banking's SQL/ADF has been run
-  against a real Azure subscription yet — offline-validated/reviewed only.
-- None of this work (Phases 2-9) has been committed to git yet, and
-  nothing has been pushed to `origin/main` — pending review of the
-  working tree. The actual GitHub Release, Issues, Discussions, and
-  Project board (Phase 10) haven't been created either; `gh` CLI isn't
-  installed in this environment, so that's a manual step using the
-  drafted content above.
+- None of the IaC (Phase 6 or Phase 7), Fabric, or Synapse has been run
+  against a real Azure subscription/workspace yet — offline-validated
+  only. **The SQL layer is the exception**: every script in `src/sql/`
+  and all three accelerators has been verified end-to-end against a
+  real, live SQL Server 2022 container, including loading real generated
+  data through staging into every dimension/fact table (see the Verified
+  section above) — ADF itself (the Data Factory service) has not been
+  proven the same way, only the SQL side it ultimately calls.
+- This work is now committed (squashed to a single commit by the repo
+  owner) and pushed to `origin/main`. The actual GitHub Release, Issues,
+  Discussions, and Project board (Phase 10) still haven't been created;
+  `gh` CLI isn't installed in this environment, so that remains a manual
+  step using `RELEASE_NOTES_v1.0.0.md` and `.github/COMMUNITY_LAUNCH.md`'s
+  drafted content.
 
 ---
 

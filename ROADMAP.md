@@ -6,17 +6,18 @@ Status legend: ✅ done · 🚧 in progress · ⏳ not started
 
 ## Current status at a glance (2026-07-23)
 
-**Fully built and pushed to `origin/main`** (`github.com/mubeen01/Azure-Data-Engineering-Accelerator`,
-commit `482e8a6`): Phases 1, 2, 6, 7, 9, plus Fabric, Synapse, and CI/CD
-(all three reversed from an earlier "deferred" decision). Phases 3, 4, 5,
-8, 10 are 🚧 partially done — see each phase section below for exactly
-what's missing.
+**Fully built and pushed to `origin/main`** (`github.com/mubeen01/Azure-Data-Engineering-Accelerator`
+— history was squashed to a single commit by the repo owner, so no
+specific hash is tracked here anymore): Phases 1, 2, 6, 7, 9, plus Fabric,
+Synapse, and CI/CD (all three reversed from an earlier "deferred"
+decision). Phases 3, 4, 5, 8, 10 are 🚧 partially done — see each phase
+section below for exactly what's missing.
 
 ### What's done, module by module
 
 | Module | Status |
 |---|---|
-| `src/sql/` | ✅ Full star schema, ETL, optimization. Database/schema/dimension creation **verified against a real, live SQL Server 2022 container** (facts/procs/banking extensions reviewed but not run the same way) |
+| `src/sql/` | ✅ Full star schema, ETL, optimization. **Every script verified against a real, live SQL Server 2022 container** — all 32 files in `src/sql/`, zero errors (see `CHANGELOG.md`'s `[Unreleased]` → Verified section for what superseded the earlier partial run) |
 | `tools/synthetic-data-generator/` | 🚧 Banking, Healthcare, Retail domains done (`datasets/{banking,healthcare,retail}/` all populated at 2,000-row scale); Insurance not started |
 | `src/adf/` | ✅ Generic metadata-driven framework. JSON structurally validated, not run against a live Data Factory |
 | `src/databricks/` | ✅ Bronze/Silver/Gold/streaming/optimization notebooks. Python-valid, not run against a live Spark cluster |
@@ -24,7 +25,7 @@ what's missing.
 | `src/monitoring/`, `src/security/` | ✅ Diagnostic settings, alerts, RBAC, Entra admin, CI/CD app registration. Offline-validated, not deployed |
 | `src/fabric/` | ✅ Warehouse compatibility doc, Lakehouse notebooks, one pipeline. Python/JSON-valid, no Fabric-equivalent of `bicep build` exists to validate further |
 | `src/synapse/` | ✅ Serverless SQL views, Spark notebooks, one pipeline. Same verification ceiling as Fabric |
-| `examples/banking/`, `examples/healthcare/`, `examples/retail/` | ✅ All three built end-to-end — real generated data through SQL → ADF (metadata-driven) → Databricks, plus per-example `architecture.md`. Insurance blocked on the generator gap above |
+| `examples/banking/`, `examples/healthcare/`, `examples/retail/` | ✅ All three built end-to-end — real generated data through SQL → ADF (metadata-driven) → Databricks, plus per-example `architecture.md`. **All three accelerators' SQL, including the full staging → dim/fact ETL, verified against a live SQL Server 2022 container with real generated data — exact row counts, zero orphaned FKs.** Insurance blocked on the generator gap above |
 | `architecture/`, `docs/` | ✅ All written, cross-referenced to real files |
 | `.github/workflows/ci.yml` | ✅ 5 real jobs (Bicep, Terraform, JSON, Python, live-SQL-Server). **Not yet observed running** — first real execution happens whenever GitHub picks up a push |
 | Phase 10 (Release/Issues/Discussions/Project board) | 🚧 Content drafted (`RELEASE_NOTES_v1.0.0.md`, `.github/GOOD_FIRST_ISSUES.md`, `.github/COMMUNITY_LAUNCH.md`); none of the actual GitHub-side objects created yet (needs `gh` CLI or the web UI) |
@@ -38,19 +39,25 @@ what's missing.
    synthetic data generator" for the concrete starting point — real
    design work (no existing shape to copy), more so than the other three
    were.
-2. **Nothing has been deployed anywhere real yet.** Every SQL/Bicep/
-   Terraform/ADF/Databricks/Fabric/Synapse artifact is written and
-   validated to the ceiling this environment allows (offline compilers,
-   or one live SQL Server container test) — none of it has touched a
-   real Azure subscription, Databricks workspace, Fabric tenant, or
-   Synapse workspace. That first real deployment is the next thing that
-   would surface genuinely new information, the way the banking
-   accelerator surfaced the generator path bug and the ADF load-order bug,
-   and the healthcare/retail accelerators surfaced that the framework's
-   own generic staging tables (`src/sql/06-stored-procedures/00_Create_Staging_Tables.sql`)
+2. **Nothing has been deployed to real Azure yet — but the SQL layer is
+   now the exception, not the rule.** Every script in `src/sql/` and all
+   three accelerators has actually run, end-to-end, against a live SQL
+   Server 2022 container (real generated data, exact row counts, zero
+   orphaned FKs — see `CHANGELOG.md`). Bicep/Terraform/ADF/Databricks/
+   Fabric/Synapse remain offline-validated only — none of them has
+   touched a real Azure subscription, Databricks workspace, Fabric
+   tenant, or Synapse workspace. That first real deployment is still the
+   next thing that would surface genuinely new information, the way the
+   banking accelerator surfaced the generator path bug and the ADF
+   load-order bug, and the live SQL run surfaced that the framework's own
+   generic staging tables (`src/sql/06-stored-procedures/00_Create_Staging_Tables.sql`)
    have never actually been used by any real pipeline in this repo —
    every accelerator so far needed its own (see `examples/retail/README.md`'s
-   "what's still not done" section).
+   "what's still not done" section). It also surfaced a real local-tooling
+   gotcha worth knowing: older `sqlcmd` builds (ODBC 17) default
+   `QUOTED_IDENTIFIER OFF`, which fails every filtered index in this
+   schema — not a script bug, but confusing if you hit it; use `-I` or a
+   newer client.
 3. **CI just went live in this push and hasn't run yet.** Worth checking
    the Actions tab on GitHub after this — if the `validate-sql` job's
    SQL Server service container doesn't come up cleanly on GitHub's
@@ -291,7 +298,7 @@ JSON, just an explanation and a pointer to the metadata seed script),
   Same reconciliation pattern as banking's customer (embedded address →
   synthesized `dim_location` row) shows up again for patient — the second
   time that exact mismatch has appeared, good evidence it's a real
-  recurring generator shape, not a banking one-off. 10-task Databricks job.
+  recurring generator shape, not a banking one-off. 12-task Databricks job.
 - ✅ **Retail, end-to-end** — see `examples/retail/README.md`. Real
   generated data (2,000 customers / 160 products / 320 inventory rows /
   8,000 orders). The opposite story from healthcare: `dim.dim_customer`,
@@ -300,7 +307,7 @@ JSON, just an explanation and a pointer to the metadata seed script),
   didn't mean procedure reuse: all four objects still needed their own
   load procedure, because the generic procedures hardcode their staging
   table by name and the generic staging tables aren't a column-for-column
-  match to any of these CSVs either. 10-task Databricks job.
+  match to any of these CSVs either. 12-task Databricks job.
 - **Bugs/gaps this surfaced and fixed** (integration work doing its job):
   a real off-by-one path bug in the Phase 3 generator's CLI (data was
   landing in `tools/datasets/` instead of `datasets/`); a missing
@@ -309,15 +316,21 @@ JSON, just an explanation and a pointer to the metadata seed script),
   guaranteed load order; confirmation (via retail) that the generic
   staging tables in `src/sql/06-stored-procedures/00_Create_Staging_Tables.sql`
   have never actually been used by any real pipeline in this repo — every
-  accelerator so far has needed its own, shaped exactly to its CSV.
+  accelerator so far has needed its own, shaped exactly to its CSV; a
+  false failure on every filtered `is_current` index, caused by an older
+  `sqlcmd` client (ODBC 17) defaulting `QUOTED_IDENTIFIER OFF` rather than
+  any script — see `docs/troubleshooting.md`.
 - ⏳ **Not done**: Insurance — blocked on its generator not existing (no
   dataset shape defined anywhere yet, unlike the other three, which each
-  had at least an empty placeholder CSV shape to design against). None of
-  banking's/healthcare's/retail's SQL/ADF has run against a live
-  instance; each Databricks bundle's YAML is confirmed well-formed but
-  `databricks bundle validate` itself needs a reachable workspace to
-  fully pass (confirmed that's the actual blocker, not a config error).
-  The CSV-to-storage-account upload step isn't automated for any of the
+  had at least an empty placeholder CSV shape to design against). All
+  three accelerators' SQL has now run end-to-end against a live SQL
+  Server 2022 container with real generated data (see `CHANGELOG.md`);
+  ADF itself (the actual Data Factory pipelines/orchestrator) has not —
+  only the SQL side ADF ultimately calls has been proven live. Each
+  Databricks bundle's YAML is confirmed well-formed but `databricks
+  bundle validate` itself needs a reachable workspace to fully pass
+  (confirmed that's the actual blocker, not a config error). The
+  CSV-to-storage-account upload step isn't automated for any of the
   three.
 
 ---
@@ -363,30 +376,39 @@ Before making the repository public: GitHub Release v1.0.0, release notes,
 project board, good first issues, discussion board, contribution guide
 updates.
 
-**A real blocker found at the start of this phase**: none of Phases 2-9's
-work was actually committed to git — only the original Phase 1 commits
-existed, with everything since sitting as uncommitted changes. A release
-of nothing isn't meaningful, so this had to be surfaced before anything
-else. Per direction: not committed yet (pending your own review of the
-working tree first), and nothing pushed to `origin/main`.
+**A real blocker found early in this phase**: none of Phases 2-9's work
+was actually committed to git at first — only the original Phase 1
+commits existed, with everything since sitting as uncommitted changes. A
+release of nothing isn't meaningful, so this had to be surfaced before
+anything else. **Since resolved**: the repo owner committed everything
+(squashed to a single commit) and pushed to `origin/main` themselves.
 
 `gh` CLI isn't installed in this environment, so GitHub-side actions
 (actual Release, Issues, Discussions, Project board) can't be done
-directly here — content is drafted for you to use manually instead:
+directly here — content is drafted for manual use instead:
 
 - ✅ `CONTRIBUTING.md` — rewritten to describe the actual project
-  structure and conventions (was generic Phase 1 boilerplate).
+  structure and conventions (was generic Phase 1 boilerplate); its CI
+  section was later updated again once `.github/workflows/ci.yml` went
+  from placeholder to real.
 - ✅ `RELEASE_NOTES_v1.0.0.md` — draft GitHub Release description,
-  compiled from `CHANGELOG.md`, including an honest verified-vs-reviewed
-  section.
-- ✅ `.github/GOOD_FIRST_ISSUES.md` — 10 concrete starter issues, each
-  traced to a specific documented gap (not speculative).
+  compiled from `CHANGELOG.md`'s `[1.0.0]` entry, including an honest
+  verified-vs-reviewed section (now covering three accelerators and a
+  fully live-verified SQL layer, not just banking's DDL).
+- ✅ `.github/GOOD_FIRST_ISSUES.md` — concrete starter issues, each
+  traced to a specific documented gap (not speculative) — kept in sync as
+  items got done (the original Healthcare/Retail generator and "second
+  accelerator" issues were closed out by later work, replaced with
+  Insurance and the generic-staging-table gap it surfaced).
 - ✅ `.github/COMMUNITY_LAUNCH.md` — suggested Project board columns/cards
-  and a Discussions welcome post draft.
-- ⏳ **Not done**: committing the work itself (your call), pushing to
-  `origin/main` (your call), and actually creating the GitHub
-  Release/Issues/Discussions/Project board from the drafted content
-  (requires `gh` CLI or the GitHub web UI).
+  and a Discussions welcome post draft, kept in sync with the same later
+  work.
+- ✅ `CHANGELOG.md`'s `[Unreleased]` section cut to a dated `[1.0.0] -
+  2026-07-23` entry, with a fresh empty `[Unreleased]` above it for
+  whatever comes next.
+- ⏳ **Not done**: actually creating the GitHub Release/Issues/
+  Discussions/Project board from the drafted content above (requires
+  `gh` CLI or the GitHub web UI — still your manual step).
 
 ---
 

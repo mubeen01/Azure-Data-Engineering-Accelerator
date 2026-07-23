@@ -67,7 +67,7 @@ both dimensions before either fact. See `adf/README.md`.
 
 ## Databricks
 
-`databricks/databricks.yml` wires a 10-task job: Bronze (4 entities) →
+`databricks/databricks.yml` wires a 12-task job: Bronze (4 entities) →
 Silver (4 entities) → Gold dimensions (`dim_patient`, `dim_provider` —
 via the generic SCD Type 2 notebook) → Gold facts
 (`gold_load_fact_claims_healthcare.py`, `gold_load_fact_pharmacy_healthcare.py`
@@ -86,11 +86,13 @@ resolved to a `location_key` — only the SQL path does that resolution.
 - **Data generation**: ran for real, verified (2,000/100/6,000/4,000 rows,
   correct headers, referentially consistent — see
   `tools/synthetic-data-generator/README.md`).
-- **SQL**: written and reviewed against the same patterns
-  `examples/banking/sql/` already established; not executed against a
-  live SQL Server/Azure SQL instance in this environment — same caveat as
-  the rest of `src/sql/` and `examples/banking/sql/` before their later
-  live-container verification pass (see `CHANGELOG.md`).
+- **SQL**: verified end-to-end against a real, live SQL Server 2022
+  container — every script in this folder ran with zero errors, the real
+  generated CSVs were loaded into staging, and every load procedure ran
+  in dependency order. Row counts matched the generator's output exactly
+  (2,000 patients / 100 providers / 6,000 claims / 4,000 prescriptions)
+  with zero orphaned foreign keys on either fact table. See
+  `CHANGELOG.md`'s `[Unreleased]` → Verified section.
 - **ADF**: no new pipeline JSON to validate (metadata-driven — see
   `adf/README.md`); the metadata seed script is plain T-SQL, covered by
   the SQL caveat above.

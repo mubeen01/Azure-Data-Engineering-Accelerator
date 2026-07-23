@@ -58,17 +58,24 @@ smoke test always passed an explicit output path (see
 
 ## Validating infrastructure changes
 
-There's no CI enforcing this yet (`src/cicd/` is explicitly out of v1.0
-scope — see `ROADMAP.md`), so it's on you before opening a PR:
+`.github/workflows/ci.yml` runs this automatically on every push/PR now
+(reversing the earlier "out of v1.0 scope" decision for `src/cicd/` — see
+`ROADMAP.md`'s CI/CD section), but running it yourself first before
+opening a PR saves a round trip:
 
 - Bicep: `az bicep build --file main.bicep --stdout > /dev/null` should
-  report zero errors.
+  report zero errors — same check as CI's `validate-bicep` job.
 - Terraform: `terraform init -backend=false && terraform validate` should
   pass (warnings are fine if you understand and can explain them — see
-  `docs/troubleshooting.md` for one already-accepted example).
-- SQL: there's no live CI database, but standing up SQL Server locally in
-  Docker takes one command and is how this repo's own SQL layer was last
-  verified — see `docs/getting-started.md`'s Path 2.
+  `docs/troubleshooting.md` for one already-accepted example) — same
+  check as CI's `validate-terraform` job.
+- SQL: CI's `validate-sql` job runs every script in `src/sql/` and every
+  `examples/*/sql/` against a real SQL Server 2022 service container.
+  Reproduce it locally the same way — standing up SQL Server in Docker
+  takes one command — see `docs/getting-started.md`'s Path 2. (If you hit
+  every filtered index failing with a `QUOTED_IDENTIFIER` error locally,
+  that's a client-side `sqlcmd` default, not your script — see
+  `docs/troubleshooting.md`.)
 
 ## Pull requests
 

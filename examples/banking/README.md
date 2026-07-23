@@ -90,10 +90,14 @@ Lake path trades some normalization for simplicity in this pass.
 
 - **Data generation**: ran for real, verified (2,000/2,800/24,000/600 rows,
   correct headers, referentially consistent).
-- **SQL**: written and carefully reviewed against the same patterns
-  Phase 2 already established; not executed against a live SQL Server/Azure
-  SQL instance (none available in this environment) — same caveat as the
-  rest of `src/sql/`.
+- **SQL**: verified end-to-end against a real, live SQL Server 2022
+  container — every script in this folder ran with zero errors, the real
+  generated CSVs were loaded into staging, and every load procedure ran
+  in dependency order. Row counts matched the generator's output exactly
+  (2,000 customers / 2,800 accounts / 600 loans / 24,000 transactions in
+  their target dim/fact tables) with zero orphaned foreign keys on
+  `fact.fact_transactions`. See `CHANGELOG.md`'s `[Unreleased]` → Verified
+  section.
 - **ADF**: JSON validated for well-formedness; not run against a live Data
   Factory.
 - **Databricks bundle**: YAML confirmed well-formed and structurally

@@ -41,6 +41,22 @@ This is exactly how Phase 8's SQL layer was verified — `sqlcmd` or
 adea-sql`) and, if you started Docker Desktop just for this, shut it down
 afterward — a 2GB+ SQL Server image left cached is easy to forget about.
 
+**"Every filtered index (`dim_customer`, `dim_account`, `dim_patient`,
+anything with `WHERE is_current = 1`) fails with `Msg 1934 ... CREATE
+INDEX failed because ... 'QUOTED_IDENTIFIER'`."**
+Not a bug in the script — it's the *client's* session setting, not the
+server's. Some `sqlcmd` builds (older ones based on ODBC Driver 17)
+default `SET QUOTED_IDENTIFIER OFF` for the session, which filtered
+indexes (and indexed views, computed columns, etc.) require to be `ON`.
+Confirmed by checking `SELECT SESSIONPROPERTY('QUOTED_IDENTIFIER')` —
+`0` with a plain connection, `1` after adding `-I`. Fix: pass `-I` to
+`sqlcmd`, or use a newer client (`mssql-tools18`'s `sqlcmd`, Azure Data
+Studio, and CI's own `validate-sql` job default `QUOTED_IDENTIFIER ON`
+already, which is why this never showed up there). Every script in
+`src/sql/` and all three accelerators (`examples/{banking,healthcare,retail}/sql/`)
+re-verified clean against a live container once this was accounted for
+— see `CHANGELOG.md`'s Verified section.
+
 ## Bicep
 
 **"I tried to write one generic diagnostic-settings module and Bicep
